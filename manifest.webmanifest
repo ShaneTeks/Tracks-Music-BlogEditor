@@ -1,0 +1,18 @@
+{
+  "name": "Tracks Blog Editor",
+  "short_name": "Tracks Editor",
+  "description": "Standalone editor app for Tracks blog posts.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f6f1",
+  "theme_color": "#513ec0",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#513ec0" />
+  <meta name="description" content="Standalone Tracks blog editor app." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="logo.png" />
+  <link rel="stylesheet" href="app.css" />
+  <title>Tracks Blog Editor</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="config.js"></script>
+  <script defer src="app.js"></script>
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="Tracks Blog Editor">
+        <img src="logo.png" alt="" />
+        <span>
+          <strong>Tracks</strong>
+          <small>Blog Editor</small>
+        </span>
+      </a>
+
+      <div class="topbar-actions">
+        <button class="ghost-button" type="button" data-refresh-posts>
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M20 11a8 8 0 0 0-14.9-4"></path>
+            <path d="M4 5v6h6"></path>
+            <path d="M4 13a8 8 0 0 0 14.9 4"></path>
+            <path d="M20 19v-6h-6"></path>
+          </svg>
+          Refresh
+        </button>
+        <button class="ghost-button" type="button" data-sign-out hidden>
+          Sign out
+        </button>
+      </div>
+    </header>
+
+    <main id="top">
+      <p class="status" data-status aria-live="polite"></p>
+
+      <section class="auth-panel" data-auth-panel>
+        <div>
+          <p class="eyebrow">Super admin</p>
+          <h1>Sign in to manage blog posts</h1>
+          <p class="muted">
+            A separate Tracks workspace for super admins. Sign in with your Supabase email and password to manage the
+            posts that feed the public blog.
+          </p>
+        </div>
+
+        <form class="login-form" method="post" action="#" onsubmit="return false" data-login-form>
+          <div class="login-grid">
+            <div class="field">
+              <label for="admin-email">Email address</label>
+              <input id="admin-email" name="email" type="email" autocomplete="email" required placeholder="admin@example.com" />
+            </div>
+            <div class="field">
+              <label for="admin-password">Password</label>
+              <input id="admin-password" name="password" type="password" autocomplete="current-password" required />
+            </div>
+            <button class="primary-button" type="submit">Sign in</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="workspace" data-workspace hidden>
+        <aside class="post-sidebar">
+          <div class="sidebar-head">
+            <div>
+              <p class="eyebrow">Blogs</p>
+              <p class="session-line">Signed in as <span data-session-email></span></p>
+            </div>
+            <button class="ghost-button compact-button" type="button" data-new-post>
+              <span aria-hidden="true">+</span>
+              New blog
+            </button>
+          </div>
+
+          <div class="post-list" data-post-list></div>
+          <p class="empty-state" data-empty-state hidden>No posts yet. Create the first one.</p>
+        </aside>
+
+        <section class="editor-panel">
+          <div class="editor-head">
+            <div>
+              <p class="eyebrow">Editor</p>
+              <h2 data-editor-title>New post</h2>
+            </div>
+            <button class="danger-button" type="button" data-delete-post hidden>Delete blog</button>
+          </div>
+
+          <form class="post-form" data-post-form>
+            <input type="hidden" name="id" data-post-id />
+
+            <div class="field">
+              <label for="post-title">Title</label>
+              <input id="post-title" name="title" type="text" required data-title-input />
+            </div>
+
+            <div class="field">
+              <label for="post-slug">Slug</label>
+              <input id="post-slug" name="slug" type="text" required data-slug-input />
+            </div>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="post-category">Category</label>
+                <input id="post-category" name="category" type="text" value="Article" />
+              </div>
+
+              <div class="field">
+                <label for="post-author">Author</label>
+                <input id="post-author" name="author_name" type="text" value="Tracks" />
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="post-status">Status</label>
+                <select id="post-status" name="status">
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="post-published-at">Publish date</label>
+                <input id="post-published-at" name="published_at" type="date" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="post-read-minutes">Read time</label>
+              <input id="post-read-minutes" name="read_minutes" type="number" min="1" max="60" value="4" />
+            </div>
+
+            <div class="field">
+              <label for="post-excerpt">Excerpt</label>
+              <textarea id="post-excerpt" name="excerpt" rows="3" required></textarea>
+            </div>
+
+            <div class="field">
+              <label for="post-body">Body</label>
+              <textarea id="post-body" name="body" rows="15" required
+                placeholder="Use blank lines between paragraphs. Use ## Heading for sections and - item for bullets."></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button class="primary-button" type="submit" data-save-post>Save blog</button>
+              <a class="ghost-link" href="../blog.html" target="_blank" rel="noopener noreferrer" data-public-blog-link>Open public blog</a>
+            </div>
+          </form>
+        </section>
+
+        <section class="preview-panel" aria-live="polite">
+          <p class="eyebrow">Preview</p>
+          <div data-preview></div>
+        </section>
+
+        <section class="blogs-panel" aria-labelledby="blogs-preview-title">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Website view</p>
+              <h2 id="blogs-preview-title">Blogs</h2>
+            </div>
+            <div class="section-actions">
+              <span class="published-count" data-published-count>0 published</span>
+              <a class="ghost-link" href="../blog.html" target="_blank" rel="noopener noreferrer" data-public-blog-link>Open public blog</a>
+            </div>
+          </div>
+          <div class="website-blog-grid" data-website-blogs></div>
+        </section>
+      </section>
+
+    </main>
+  </div>
+</body>
+
+</html>
