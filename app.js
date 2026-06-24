@@ -163,6 +163,27 @@
     return date.toISOString().slice(0, 10);
   };
 
+  const getLocalDateInputValue = (date = new Date()) =>
+    [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, '0'),
+      String(date.getDate()).padStart(2, '0'),
+    ].join('-');
+
+  const getPublishedAt = (status, publishedDate) => {
+    if (status !== 'published') return null;
+
+    const selectedDate = String(publishedDate || '').trim();
+    const today = getLocalDateInputValue();
+
+    if (!selectedDate || selectedDate === today) {
+      return new Date().toISOString();
+    }
+
+    const scheduledDate = new Date(`${selectedDate}T12:00:00Z`);
+    return Number.isNaN(scheduledDate.getTime()) ? new Date().toISOString() : scheduledDate.toISOString();
+  };
+
   const renderBody = (body) => {
     const blocks = String(body || '')
       .split(/\n{2,}/)
@@ -262,9 +283,7 @@
     const formData = new FormData(postForm);
     const status = String(formData.get('status') || 'draft');
     const publishedDate = String(formData.get('published_at') || '').trim();
-    const publishedAt = status === 'published'
-      ? new Date(`${publishedDate || new Date().toISOString().slice(0, 10)}T12:00:00Z`).toISOString()
-      : null;
+    const publishedAt = getPublishedAt(status, publishedDate);
 
     return {
       title: String(formData.get('title') || '').trim(),
