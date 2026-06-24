@@ -204,6 +204,18 @@ main {
   padding: clamp(1.75rem, 4vw, 3.5rem) 0 3rem;
 }
 
+main:has(.auth-panel:not([hidden])) {
+  min-height: calc(100vh - 5rem);
+  display: grid;
+  align-content: center;
+}
+
+main:has(.auth-panel:not([hidden])) > .status {
+  width: min(100%, 620px);
+  margin-inline: auto;
+  text-align: center;
+}
+
 .auth-panel,
 .workspace {
   display: grid;
@@ -211,12 +223,33 @@ main {
 }
 
 .auth-panel {
-  max-width: 780px;
+  width: min(100%, 640px);
+  max-width: 640px;
+  margin-inline: auto;
+  gap: 1.6rem;
   border: 1px solid var(--line);
   border-radius: 2.4rem;
   background: var(--panel-bg);
   box-shadow: var(--shadow-panel);
   padding: clamp(1.4rem, 4vw, 2.6rem);
+  text-align: center;
+}
+
+.auth-panel > div {
+  display: grid;
+  justify-items: center;
+}
+
+.auth-panel h1 {
+  max-width: 16ch;
+  margin-bottom: .85rem;
+  font-size: clamp(2.05rem, 4.8vw, 3.45rem);
+  line-height: 1.03;
+}
+
+.auth-panel .muted {
+  max-width: 46ch;
+  margin-inline: auto;
 }
 
 .workspace {
@@ -236,7 +269,6 @@ main {
 .post-sidebar,
 .editor-panel,
 .preview-panel,
-.auth-panel,
 .blogs-panel {
   padding: clamp(1.05rem, 2vw, 1.5rem);
 }
@@ -331,6 +363,11 @@ h2 {
   gap: 1rem;
 }
 
+.login-form {
+  width: min(100%, 430px);
+  margin-inline: auto;
+}
+
 .inline-form {
   gap: .75rem;
   align-items: stretch;
@@ -338,9 +375,16 @@ h2 {
 
 .login-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, .9fr) auto;
-  gap: .85rem;
-  align-items: end;
+  grid-template-columns: 1fr;
+  gap: .9rem;
+  align-items: stretch;
+  text-align: left;
+}
+
+.login-grid .primary-button {
+  width: 100%;
+  min-height: 3.05rem;
+  margin-top: .2rem;
 }
 
 .field {

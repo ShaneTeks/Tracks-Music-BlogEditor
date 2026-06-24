@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "node build-config.js"
+    "build": "node build-config.js",
+    "preview": "node serve.js"
   }
 }
