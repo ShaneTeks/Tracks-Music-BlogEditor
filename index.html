@@ -75,7 +75,7 @@
           <div class="sidebar-head">
             <div>
               <p class="eyebrow">Blogs</p>
-              <p class="session-line">Signed in as <span data-session-email></span></p>
+              <span data-session-email hidden></span>
             </div>
             <button class="ghost-button compact-button" type="button" data-new-post>
               <span aria-hidden="true">+</span>
@@ -93,7 +93,11 @@
               <p class="eyebrow">Editor</p>
               <h2 data-editor-title>New post</h2>
             </div>
-            <button class="danger-button" type="button" data-delete-post hidden>Delete blog</button>
+            <div class="editor-head-actions">
+              <button class="ghost-button compact-button" type="button" data-preview-toggle aria-pressed="false">Preview</button>
+              <button class="ghost-button compact-button" type="button" data-reset-post>Clear fields</button>
+              <button class="danger-button" type="button" data-delete-post hidden>Delete blog</button>
+            </div>
           </div>
 
           <form class="post-form" data-post-form>
@@ -107,6 +111,13 @@
             <div class="field">
               <label for="post-slug">Slug</label>
               <input id="post-slug" name="slug" type="text" required data-slug-input />
+            </div>
+
+            <div class="field image-field">
+              <label for="post-image-url">Blog image</label>
+              <input id="post-image-url" name="image_url" type="text" required inputmode="url"
+                placeholder="logo.png or https://example.com/image.jpg" data-image-input />
+              <p class="field-note">Required. Use a relative image path or a hosted image URL.</p>
             </div>
 
             <div class="form-grid">
@@ -148,9 +159,34 @@
             </div>
 
             <div class="field">
-              <label for="post-body">Body</label>
-              <textarea id="post-body" name="body" rows="15" required
-                placeholder="Use blank lines between paragraphs. Use ## Heading for sections and - item for bullets."></textarea>
+              <label for="post-body-editor">Body</label>
+              <div class="rich-editor" data-rich-editor>
+                <div class="editor-toolbar" role="toolbar" aria-label="Body formatting" data-editor-toolbar>
+                  <button class="toolbar-button" type="button" data-format-command="bold" title="Bold"
+                    aria-label="Bold"><strong>B</strong></button>
+                  <button class="toolbar-button" type="button" data-format-command="italic" title="Italic"
+                    aria-label="Italic"><em>I</em></button>
+                  <button class="toolbar-button" type="button" data-format-command="underline" title="Underline"
+                    aria-label="Underline"><u>U</u></button>
+                  <button class="toolbar-button" type="button" data-format-command="strikeThrough" title="Strikethrough"
+                    aria-label="Strikethrough"><s>S</s></button>
+                  <button class="toolbar-button" type="button" data-format-command="formatBlock" data-format-value="P"
+                    title="Paragraph" aria-label="Paragraph">P</button>
+                  <button class="toolbar-button" type="button" data-format-command="formatBlock" data-format-value="H2"
+                    title="Heading" aria-label="Heading">H2</button>
+                  <button class="toolbar-button" type="button" data-format-command="insertUnorderedList"
+                    title="Bullet list" aria-label="Bullet list">&bull;</button>
+                  <button class="toolbar-button" type="button" data-format-command="insertOrderedList"
+                    title="Numbered list" aria-label="Numbered list">1.</button>
+                  <button class="toolbar-button" type="button" data-format-command="insertOrderedList" data-list-style="A"
+                    title="Lettered list" aria-label="Lettered list">A.</button>
+                  <button class="toolbar-button" type="button" data-format-command="removeFormat"
+                    title="Clear formatting" aria-label="Clear formatting">Tx</button>
+                </div>
+                <div id="post-body-editor" class="rich-editor-surface" contenteditable="true" role="textbox"
+                  aria-multiline="true" aria-label="Body" data-body-editor data-placeholder="Start writing..."></div>
+              </div>
+              <textarea id="post-body" name="body" data-body-input hidden></textarea>
             </div>
 
             <div class="form-actions">
@@ -158,12 +194,23 @@
               <a class="ghost-link" href="../blog.html" target="_blank" rel="noopener noreferrer" data-public-blog-link>Open public blog</a>
             </div>
           </form>
+
+          <div class="editor-preview" data-editor-preview aria-live="polite" hidden>
+            <div data-preview></div>
+          </div>
         </section>
 
-        <section class="preview-panel" aria-live="polite">
-          <p class="eyebrow">Preview</p>
-          <div data-preview></div>
-        </section>
+        <dialog class="confirm-dialog" data-clear-dialog aria-labelledby="clear-dialog-title">
+          <form method="dialog">
+            <p class="eyebrow">Clear fields</p>
+            <h3 id="clear-dialog-title">Are you sure you want to clear the fields?</h3>
+            <p class="muted">This starts a new unsaved post and removes the details currently filled into the editor.</p>
+            <div class="dialog-actions">
+              <button class="ghost-button" type="button" data-cancel-clear>No, keep them</button>
+              <button class="danger-button" type="button" data-confirm-clear>Yes, clear fields</button>
+            </div>
+          </form>
+        </dialog>
 
         <section class="blogs-panel" aria-labelledby="blogs-preview-title">
           <div class="section-head">
