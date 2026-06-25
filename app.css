@@ -489,6 +489,129 @@ textarea:focus {
   box-shadow: var(--focus-ring);
 }
 
+.schedule-control {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 3rem;
+  gap: .55rem;
+}
+
+.schedule-control input[readonly] {
+  cursor: pointer;
+}
+
+.calendar-toggle {
+  min-width: 3rem;
+  border-radius: 1rem;
+}
+
+.calendar-popover {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + .65rem);
+  right: 0;
+  width: min(22rem, calc(100vw - 2rem));
+  border: 1px solid var(--line-strong);
+  border-radius: 1.15rem;
+  background: var(--surface-strong);
+  box-shadow: var(--shadow-panel);
+  padding: .95rem;
+}
+
+.calendar-head,
+.calendar-actions,
+.time-slider-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+}
+
+.calendar-head strong {
+  color: var(--color-ink);
+  font-size: .95rem;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: .3rem;
+}
+
+.calendar-weekdays {
+  margin-top: .85rem;
+  color: var(--color-muted);
+  font-size: .7rem;
+  font-weight: 900;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.calendar-grid {
+  margin-top: .45rem;
+}
+
+.calendar-day {
+  display: inline-flex;
+  aspect-ratio: 1;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: .7rem;
+  background: transparent;
+  color: var(--color-ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: .84rem;
+  font-weight: 800;
+}
+
+.calendar-day:hover,
+.calendar-day.is-selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.calendar-day.is-outside {
+  color: var(--color-muted);
+  opacity: .56;
+}
+
+.calendar-day.is-today {
+  border-color: var(--tone-teal-line);
+}
+
+.time-slider {
+  display: grid;
+  gap: .65rem;
+  margin-top: .95rem;
+  border-top: 1px solid var(--line);
+  padding-top: .9rem;
+}
+
+.time-slider-head {
+  color: var(--color-muted);
+  font-size: .78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.time-slider-head strong {
+  color: var(--color-primary);
+  font-size: .95rem;
+}
+
+.time-slider input[type="range"] {
+  accent-color: var(--color-primary);
+  padding: 0;
+}
+
+.calendar-actions {
+  margin-top: .85rem;
+}
+
 .confirm-dialog {
   width: min(100% - 2rem, 430px);
   border: 1px solid var(--line);

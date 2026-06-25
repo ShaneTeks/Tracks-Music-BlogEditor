@@ -30,6 +30,18 @@
   const imageFileInput = document.querySelector('[data-image-file-input]');
   const imageFileName = document.querySelector('[data-image-file-name]');
   const publishDateField = document.querySelector('[data-publish-date-field]');
+  const publishDateInput = document.querySelector('[data-publish-date-input]');
+  const publishDateDisplay = document.querySelector('[data-publish-date-display]');
+  const calendarToggle = document.querySelector('[data-calendar-toggle]');
+  const calendarPopover = document.querySelector('[data-calendar-popover]');
+  const calendarMonth = document.querySelector('[data-calendar-month]');
+  const calendarGrid = document.querySelector('[data-calendar-grid]');
+  const calendarPrev = document.querySelector('[data-calendar-prev]');
+  const calendarNext = document.querySelector('[data-calendar-next]');
+  const calendarClear = document.querySelector('[data-calendar-clear]');
+  const calendarToday = document.querySelector('[data-calendar-today]');
+  const publishTimeSlider = document.querySelector('[data-publish-time-slider]');
+  const publishTimeLabel = document.querySelector('[data-publish-time-label]');
   const idInput = document.querySelector('[data-post-id]');
   const bodyInput = document.querySelector('[data-body-input]');
   const bodyEditor = document.querySelector('[data-body-editor]');
@@ -48,6 +60,7 @@
     previewMode: false,
     pendingImageFile: null,
     pendingImagePreviewUrl: '',
+    calendarMonthDate: new Date(),
     preservingAccessError: false,
   };
 
@@ -480,11 +493,67 @@
       : '<div class="website-empty">Published blog posts will appear here using the same card layout as the public website.</div>';
   };
 
-  const toDateInput = (value) => {
+  const padNumber = (value) => String(value).padStart(2, '0');
+
+  const toDateKey = (date) =>
+    `${date.getFullYear()}-${padNumber(date.getMonth() + 1)}-${padNumber(date.getDate())}`;
+
+  const minutesToTime = (minutes) => {
+    const safeMinutes = Math.max(0, Math.min(1439, Number(minutes) || 0));
+    return `${padNumber(Math.floor(safeMinutes / 60))}:${padNumber(safeMinutes % 60)}`;
+  };
+
+  const timeToMinutes = (time = '12:00') => {
+    const [hours = '12', minutes = '0'] = String(time).split(':');
+    return Math.max(0, Math.min(1439, (Number(hours) || 0) * 60 + (Number(minutes) || 0)));
+  };
+
+  const getScheduleParts = () => {
+    const value = String(publishDateInput?.value || '');
+    const [date = '', time = '12:00'] = value.split('T');
+    return { date, time: time.slice(0, 5) || '12:00' };
+  };
+
+  const formatScheduleDisplay = () => {
+    const { date, time } = getScheduleParts();
+    if (!date) return '';
+
+    const [year, month, day] = date.split('-').map(Number);
+    const displayDate = new Date(year, month - 1, day);
+    if (Number.isNaN(displayDate.getTime())) return '';
+
+    return `${displayDate.toLocaleDateString(undefined, {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    })} at ${time}`;
+  };
+
+  const syncScheduleDisplay = () => {
+    if (publishDateDisplay) {
+      publishDateDisplay.value = formatScheduleDisplay();
+    }
+
+    const { time } = getScheduleParts();
+    const minutes = timeToMinutes(time);
+    if (publishTimeSlider) publishTimeSlider.value = String(minutes);
+    if (publishTimeLabel) publishTimeLabel.textContent = minutesToTime(minutes);
+  };
+
+  const setScheduleValue = (date, minutes = timeToMinutes(getScheduleParts().time)) => {
+    if (!publishDateInput) return;
+
+    publishDateInput.value = date ? `${date}T${minutesToTime(minutes)}` : '';
+    syncScheduleDisplay();
+    renderCalendar();
+    renderPreview();
+  };
+
+  const toDateTimeInput = (value) => {
     if (!value) return '';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '';
-    return date.toISOString().slice(0, 10);
+    return `${toDateKey(date)}T${padNumber(date.getHours())}:${padNumber(date.getMinutes())}`;
   };
 
   const getPublishedAt = (status, publishedDate) => {
@@ -495,10 +564,10 @@
         : new Date().toISOString();
     }
 
-    const selectedDate = String(publishedDate || '').trim();
-    if (status !== 'draft' || !selectedDate) return null;
+    const selectedDateTime = String(publishedDate || '').trim();
+    if (status !== 'draft' || !selectedDateTime) return null;
 
-    const plannedDate = new Date(`${selectedDate}T12:00:00Z`);
+    const plannedDate = new Date(selectedDateTime);
     return Number.isNaN(plannedDate.getTime()) ? null : plannedDate.toISOString();
   };
 
@@ -507,11 +576,48 @@
 
     const isDraft = postForm.elements.status.value === 'draft';
     publishDateField.hidden = !isDraft;
-    postForm.elements.published_at.disabled = !isDraft;
+    publishDateField.style.display = isDraft ? '' : 'none';
+    publishDateInput.disabled = !isDraft;
+    if (publishDateDisplay) publishDateDisplay.disabled = !isDraft;
+    if (calendarToggle) calendarToggle.disabled = !isDraft;
 
     if (!isDraft) {
-      postForm.elements.published_at.value = '';
+      publishDateInput.value = '';
+      if (calendarPopover) calendarPopover.hidden = true;
+      syncScheduleDisplay();
     }
+  };
+
+  const renderCalendar = () => {
+    if (!calendarGrid || !calendarMonth) return;
+
+    const monthDate = new Date(state.calendarMonthDate);
+    monthDate.setDate(1);
+    calendarMonth.textContent = monthDate.toLocaleDateString(undefined, {
+      month: 'long',
+      year: 'numeric',
+    });
+
+    const { date: selectedDate } = getScheduleParts();
+    const todayKey = toDateKey(new Date());
+    const startOffset = (monthDate.getDay() + 6) % 7;
+    const gridStart = new Date(monthDate);
+    gridStart.setDate(1 - startOffset);
+
+    calendarGrid.innerHTML = Array.from({ length: 42 }, (_, index) => {
+      const day = new Date(gridStart);
+      day.setDate(gridStart.getDate() + index);
+      const dateKey = toDateKey(day);
+      const isCurrentMonth = day.getMonth() === monthDate.getMonth();
+      const classes = [
+        'calendar-day',
+        isCurrentMonth ? '' : 'is-outside',
+        dateKey === todayKey ? 'is-today' : '',
+        dateKey === selectedDate ? 'is-selected' : '',
+      ].filter(Boolean).join(' ');
+
+      return `<button class="${classes}" type="button" data-calendar-date="${dateKey}">${day.getDate()}</button>`;
+    }).join('');
   };
 
   const renderBody = (body) => {
@@ -768,11 +874,14 @@
     postForm.elements.category.value = draft.category || 'Article';
     postForm.elements.author_name.value = draft.author_name || 'Tracks';
     postForm.elements.status.value = draft.status || 'draft';
-    postForm.elements.published_at.value = toDateInput(draft.published_at);
+    publishDateInput.value = toDateTimeInput(draft.published_at);
+    state.calendarMonthDate = draft.published_at ? new Date(draft.published_at) : new Date();
     postForm.elements.read_minutes.value = draft.read_minutes || 4;
     postForm.elements.excerpt.value = draft.excerpt || '';
     setBodyEditorHtml(draft.body || '');
     clearPendingImageFile();
+    syncScheduleDisplay();
+    renderCalendar();
     syncPublishDateVisibility();
 
     renderPreview();
@@ -1000,7 +1109,8 @@
       setStatus('Signed out.', 'success');
     });
 
-    state.client.auth.onAuthStateChange(() => {
+    state.client.auth.onAuthStateChange((event) => {
+      if (!['SIGNED_IN', 'SIGNED_OUT', 'USER_UPDATED'].includes(event)) return;
       showSession();
     });
   };
@@ -1094,6 +1204,87 @@
         renderPreview();
       });
     }
+
+    if (calendarToggle) {
+      calendarToggle.addEventListener('click', () => {
+        if (postForm.elements.status.value !== 'draft') return;
+        calendarPopover.hidden = !calendarPopover.hidden;
+        renderCalendar();
+      });
+    }
+
+    if (publishDateDisplay) {
+      publishDateDisplay.addEventListener('click', () => {
+        if (postForm.elements.status.value !== 'draft') return;
+        calendarPopover.hidden = false;
+        renderCalendar();
+      });
+    }
+
+    if (calendarPrev) {
+      calendarPrev.addEventListener('click', () => {
+        state.calendarMonthDate = new Date(
+          state.calendarMonthDate.getFullYear(),
+          state.calendarMonthDate.getMonth() - 1,
+          1,
+        );
+        renderCalendar();
+      });
+    }
+
+    if (calendarNext) {
+      calendarNext.addEventListener('click', () => {
+        state.calendarMonthDate = new Date(
+          state.calendarMonthDate.getFullYear(),
+          state.calendarMonthDate.getMonth() + 1,
+          1,
+        );
+        renderCalendar();
+      });
+    }
+
+    if (calendarGrid) {
+      calendarGrid.addEventListener('click', (event) => {
+        const target = event.target instanceof Element ? event.target.closest('[data-calendar-date]') : null;
+        if (!target) return;
+
+        const date = target.dataset.calendarDate;
+        setScheduleValue(date);
+        calendarPopover.hidden = true;
+      });
+    }
+
+    if (publishTimeSlider) {
+      publishTimeSlider.addEventListener('input', () => {
+        const { date } = getScheduleParts();
+        const minutes = Number(publishTimeSlider.value) || 0;
+        if (publishTimeLabel) publishTimeLabel.textContent = minutesToTime(minutes);
+        if (date) setScheduleValue(date, minutes);
+      });
+    }
+
+    if (calendarToday) {
+      calendarToday.addEventListener('click', () => {
+        const today = new Date();
+        state.calendarMonthDate = today;
+        setScheduleValue(toDateKey(today), timeToMinutes(getScheduleParts().time));
+        calendarPopover.hidden = true;
+      });
+    }
+
+    if (calendarClear) {
+      calendarClear.addEventListener('click', () => {
+        setScheduleValue('');
+        calendarPopover.hidden = true;
+      });
+    }
+
+    document.addEventListener('click', (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target || calendarPopover?.hidden) return;
+      if (target.closest('[data-schedule-control]')) return;
+      calendarPopover.hidden = true;
+    });
 
     toolbarButtons.forEach((button) => {
       button.addEventListener('mousedown', (event) => {

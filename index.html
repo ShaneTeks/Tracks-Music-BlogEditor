@@ -148,7 +148,54 @@
 
               <div class="field" data-publish-date-field>
                 <label for="post-published-at">Planned publish date</label>
-                <input id="post-published-at" name="published_at" type="date" />
+                <div class="schedule-control" data-schedule-control>
+                  <input id="post-published-at-display" type="text" readonly placeholder="Choose date" data-publish-date-display />
+                  <input id="post-published-at" name="published_at" type="hidden" data-publish-date-input />
+                  <button class="icon-button calendar-toggle" type="button" aria-label="Choose publish date" data-calendar-toggle>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M8 2v4"></path>
+                      <path d="M16 2v4"></path>
+                      <path d="M3 10h18"></path>
+                      <path d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"></path>
+                    </svg>
+                  </button>
+                  <div class="calendar-popover" data-calendar-popover hidden>
+                    <div class="calendar-head">
+                      <button class="icon-button" type="button" aria-label="Previous month" data-calendar-prev>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="m15 18-6-6 6-6"></path>
+                        </svg>
+                      </button>
+                      <strong data-calendar-month>Month YYYY</strong>
+                      <button class="icon-button" type="button" aria-label="Next month" data-calendar-next>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="m9 18 6-6-6-6"></path>
+                        </svg>
+                      </button>
+                    </div>
+                    <div class="calendar-weekdays" aria-hidden="true">
+                      <span>Mo</span>
+                      <span>Tu</span>
+                      <span>We</span>
+                      <span>Th</span>
+                      <span>Fr</span>
+                      <span>Sa</span>
+                      <span>Su</span>
+                    </div>
+                    <div class="calendar-grid" data-calendar-grid></div>
+                    <div class="time-slider">
+                      <div class="time-slider-head">
+                        <span>Publish time</span>
+                        <strong data-publish-time-label>12:00</strong>
+                      </div>
+                      <input type="range" min="0" max="1439" step="1" value="720" data-publish-time-slider />
+                    </div>
+                    <div class="calendar-actions">
+                      <button type="button" class="ghost-button compact-button" data-calendar-clear>Clear</button>
+                      <button type="button" class="ghost-button compact-button" data-calendar-today>Today</button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
