@@ -114,10 +114,14 @@
             </div>
 
             <div class="field image-field">
-              <label for="post-image-url">Blog image</label>
-              <input id="post-image-url" name="image_url" type="text" required inputmode="url"
-                placeholder="logo.png or https://example.com/image.jpg" data-image-input />
-              <p class="field-note">Required. Use a relative image path or a hosted image URL.</p>
+              <label for="post-image-file">Blog image</label>
+              <div class="image-upload-control">
+                <input id="post-image-file" name="image_file" type="file" accept="image/png,image/jpeg,image/webp,image/gif"
+                  data-image-file-input />
+                <input id="post-image-url" name="image_url" type="hidden" data-image-input />
+                <span data-image-file-name>No photo selected</span>
+              </div>
+              <p class="field-note">Required. Upload a JPG, PNG, WebP, or GIF up to 5 MB.</p>
             </div>
 
             <div class="form-grid">
@@ -142,8 +146,8 @@
                 </select>
               </div>
 
-              <div class="field">
-                <label for="post-published-at">Publish date</label>
+              <div class="field" data-publish-date-field>
+                <label for="post-published-at">Planned publish date</label>
                 <input id="post-published-at" name="published_at" type="date" />
               </div>
             </div>

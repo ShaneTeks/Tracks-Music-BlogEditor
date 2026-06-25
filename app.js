@@ -27,12 +27,18 @@
   const titleInput = document.querySelector('[data-title-input]');
   const slugInput = document.querySelector('[data-slug-input]');
   const imageInput = document.querySelector('[data-image-input]');
+  const imageFileInput = document.querySelector('[data-image-file-input]');
+  const imageFileName = document.querySelector('[data-image-file-name]');
+  const publishDateField = document.querySelector('[data-publish-date-field]');
   const idInput = document.querySelector('[data-post-id]');
   const bodyInput = document.querySelector('[data-body-input]');
   const bodyEditor = document.querySelector('[data-body-editor]');
   const toolbarButtons = document.querySelectorAll('[data-format-command]');
   const publicSiteUrl = String(config.publicSiteUrl || '').trim().replace(/\/+$/, '');
   const isFileProtocol = window.location.protocol === 'file:';
+  const blogImageBucket = 'blog-images';
+  const maxBlogImageBytes = 5 * 1024 * 1024;
+  const allowedBlogImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
   const state = {
     client: null,
@@ -40,13 +46,15 @@
     activeId: null,
     slugEdited: false,
     previewMode: false,
+    pendingImageFile: null,
+    pendingImagePreviewUrl: '',
     preservingAccessError: false,
   };
 
   const defaultDraft = {
     title: 'The Money Behind the Music Deserves Its Own Dashboard',
     slug: 'the-money-behind-the-music-deserves-its-own-dashboard',
-    image_url: 'logo.png',
+    image_url: '',
     category: 'Music finance',
     author_name: 'Tracks',
     status: 'draft',
@@ -121,6 +129,34 @@
     });
   };
 
+  const revokePendingImagePreview = () => {
+    if (!state.pendingImagePreviewUrl) return;
+    URL.revokeObjectURL(state.pendingImagePreviewUrl);
+    state.pendingImagePreviewUrl = '';
+  };
+
+  const setImageFileLabel = (label = '') => {
+    if (!imageFileName) return;
+    imageFileName.textContent = label || (imageInput?.value ? 'Saved photo ready' : 'No photo selected');
+  };
+
+  const clearPendingImageFile = ({ clearInput = true } = {}) => {
+    revokePendingImagePreview();
+    state.pendingImageFile = null;
+    if (clearInput && imageFileInput) imageFileInput.value = '';
+    setImageFileLabel();
+  };
+
+  const setPendingImageFile = (file) => {
+    clearPendingImageFile({ clearInput: false });
+    state.pendingImageFile = file;
+    state.pendingImagePreviewUrl = URL.createObjectURL(file);
+    setImageFileLabel(`${file.name} selected`);
+    renderPreview();
+  };
+
+  const getPreviewImageSrc = () => state.pendingImagePreviewUrl || imageInput?.value || '';
+
   const escapeHtml = (value) =>
     String(value || '')
       .replace(/&/g, '&amp;')
@@ -128,6 +164,27 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+
+  const getImageExtension = (file) => {
+    const mimeExtension = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+      'image/gif': 'gif',
+    }[file.type];
+
+    if (mimeExtension) return mimeExtension;
+
+    const nameExtension = String(file.name || '').split('.').pop();
+    return nameExtension ? nameExtension.toLowerCase().replace(/[^a-z0-9]/g, '') : 'jpg';
+  };
+
+  const getUploadSlug = () => slugify(slugInput.value || titleInput.value || 'blog-image') || 'blog-image';
+
+  const getUploadPath = (file) => {
+    const randomId = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    return `blog/${getUploadSlug()}-${randomId}.${getImageExtension(file)}`;
+  };
 
   const allowedRichTextTags = new Set([
     'a',
@@ -430,25 +487,31 @@
     return date.toISOString().slice(0, 10);
   };
 
-  const getLocalDateInputValue = (date = new Date()) =>
-    [
-      date.getFullYear(),
-      String(date.getMonth() + 1).padStart(2, '0'),
-      String(date.getDate()).padStart(2, '0'),
-    ].join('-');
-
   const getPublishedAt = (status, publishedDate) => {
-    if (status !== 'published') return null;
-
-    const selectedDate = String(publishedDate || '').trim();
-    const today = getLocalDateInputValue();
-
-    if (!selectedDate || selectedDate === today) {
-      return new Date().toISOString();
+    if (status === 'published') {
+      const current = state.posts.find((post) => post.id === state.activeId);
+      return current?.status === 'published' && current.published_at
+        ? current.published_at
+        : new Date().toISOString();
     }
 
-    const scheduledDate = new Date(`${selectedDate}T12:00:00Z`);
-    return Number.isNaN(scheduledDate.getTime()) ? new Date().toISOString() : scheduledDate.toISOString();
+    const selectedDate = String(publishedDate || '').trim();
+    if (status !== 'draft' || !selectedDate) return null;
+
+    const plannedDate = new Date(`${selectedDate}T12:00:00Z`);
+    return Number.isNaN(plannedDate.getTime()) ? null : plannedDate.toISOString();
+  };
+
+  const syncPublishDateVisibility = () => {
+    if (!publishDateField || !postForm?.elements.status) return;
+
+    const isDraft = postForm.elements.status.value === 'draft';
+    publishDateField.hidden = !isDraft;
+    postForm.elements.published_at.disabled = !isDraft;
+
+    if (!isDraft) {
+      postForm.elements.published_at.value = '';
+    }
   };
 
   const renderBody = (body) => {
@@ -631,6 +694,37 @@
     if (state.previewMode) renderPreview();
   };
 
+  const uploadPendingImage = async () => {
+    if (!state.pendingImageFile) return imageInput?.value || '';
+
+    const file = state.pendingImageFile;
+    const filePath = getUploadPath(file);
+
+    setStatus('Uploading image...', 'pending');
+    if (saveButton) saveButton.disabled = true;
+
+    const { data, error } = await state.client.storage
+      .from(blogImageBucket)
+      .upload(filePath, file, {
+        cacheControl: '31536000',
+        contentType: file.type,
+        upsert: false,
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    const { data: publicData } = state.client.storage
+      .from(blogImageBucket)
+      .getPublicUrl(data.path);
+
+    const publicUrl = publicData?.publicUrl || '';
+    if (imageInput) imageInput.value = publicUrl;
+    clearPendingImageFile();
+    return publicUrl;
+  };
+
   const getFormPayload = () => {
     syncBodyInput();
 
@@ -678,6 +772,8 @@
     postForm.elements.read_minutes.value = draft.read_minutes || 4;
     postForm.elements.excerpt.value = draft.excerpt || '';
     setBodyEditorHtml(draft.body || '');
+    clearPendingImageFile();
+    syncPublishDateVisibility();
 
     renderPreview();
     renderPostList();
@@ -702,8 +798,9 @@
 
   const renderPreview = () => {
     const payload = getFormPayload();
-    const imageMarkup = payload.image_url
-      ? `<figure class="editor-preview-hero"><img src="${escapeHtml(payload.image_url)}" alt="${escapeHtml(payload.title || 'Blog image')}" /></figure>`
+    const previewImageSrc = getPreviewImageSrc();
+    const imageMarkup = previewImageSrc
+      ? `<figure class="editor-preview-hero"><img src="${escapeHtml(previewImageSrc)}" alt="${escapeHtml(payload.title || 'Blog image')}" /></figure>`
       : '<div class="editor-preview-hero is-empty">Add a required blog image to preview the full post layout.</div>';
 
     preview.innerHTML = `
@@ -757,15 +854,27 @@
   const savePost = async (event) => {
     event.preventDefault();
 
+    saveButton.disabled = true;
+    deleteButton.disabled = true;
+
+    try {
+      await uploadPendingImage();
+    } catch (error) {
+      saveButton.disabled = false;
+      deleteButton.disabled = false;
+      setStatus(`Could not upload image: ${friendlyError(error)}`, 'error');
+      return;
+    }
+
     const payload = getFormPayload();
     if (!payload.title || !payload.slug || !payload.image_url || !payload.excerpt || !getRichTextContent(payload.body)) {
+      saveButton.disabled = false;
+      deleteButton.disabled = false;
       setStatus('Title, slug, image, excerpt, and body are required.', 'error');
       return;
     }
 
     setStatus('Saving post...', 'pending');
-    saveButton.disabled = true;
-    deleteButton.disabled = true;
 
     const query = state.activeId
       ? state.client.from('blog_posts').update(payload).eq('id', state.activeId).select().single()
@@ -950,6 +1059,41 @@
       }
       renderPreview();
     });
+
+    if (imageFileInput) {
+      imageFileInput.addEventListener('change', () => {
+        const file = imageFileInput.files?.[0];
+        if (!file) {
+          clearPendingImageFile();
+          renderPreview();
+          return;
+        }
+
+        if (!allowedBlogImageTypes.has(file.type)) {
+          clearPendingImageFile();
+          setStatus('Upload a JPG, PNG, WebP, or GIF image.', 'error');
+          renderPreview();
+          return;
+        }
+
+        if (file.size > maxBlogImageBytes) {
+          clearPendingImageFile();
+          setStatus('Blog images must be 5 MB or smaller.', 'error');
+          renderPreview();
+          return;
+        }
+
+        setPendingImageFile(file);
+        setStatus('Photo selected. It will upload when you save.', 'success');
+      });
+    }
+
+    if (postForm.elements.status) {
+      postForm.elements.status.addEventListener('change', () => {
+        syncPublishDateVisibility();
+        renderPreview();
+      });
+    }
 
     toolbarButtons.forEach((button) => {
       button.addEventListener('mousedown', (event) => {

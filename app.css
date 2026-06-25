@@ -452,6 +452,36 @@ textarea {
   line-height: 1.5;
 }
 
+.image-upload-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: .55rem;
+}
+
+.image-upload-control input[type="file"] {
+  border-style: dashed;
+  cursor: pointer;
+}
+
+.image-upload-control input[type="file"]::file-selector-button {
+  margin-right: .8rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 800;
+  padding: .58rem .85rem;
+}
+
+.image-upload-control span {
+  color: var(--color-muted);
+  font-size: .82rem;
+  font-weight: 800;
+}
+
 input:focus,
 select:focus,
 textarea:focus {
